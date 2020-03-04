@@ -12,8 +12,7 @@ import matplotlib.pyplot as plt
 #tau_inc = 0.01
 gamma = 0.99
 learning_rate = 0.1
-epsilon = 0.5
-epsilon_decay = 0.999
+tau_inc = 0.01 # to update tau for softmax purpose
 verbose = True
 RENDER_MAZE = False
 PRINT = False 
@@ -30,7 +29,7 @@ STREAK_TO_END = 120 # number of "success" (i.e. how quick the maze is solved) ne
 
 
 
-# A typical command to use this program from terminal is: python file.py size_maze exploration_method seed
+# A typical command to use this program from terminal is: python file.py size_maze exploration_method eps_decay seed
 
 # Beware states are tuple of size 2. To facilitate, we will use (i,j)=s beforehand.
 
@@ -97,10 +96,7 @@ def simulation(size_maze, RL_ALGO, EXPLORE_METHOD, eps_decay, seed):
     '''
     MIN_EXPLORE_RATE = 0.01
     DECAY_FACTOR = size_maze * size_maze / 10.0
-    
-    tau = init_tau = 1
-    tau_inc = 0.01
-
+    tau = 1
     '''
     Defining the simulation related constants
     '''
@@ -222,7 +218,7 @@ def simulation(size_maze, RL_ALGO, EXPLORE_METHOD, eps_decay, seed):
             epsilon = epsilon * eps_decay
         else: 
             epsilon = max(MIN_EXPLORE_RATE, min(0.8, 1.0 - math.log10((episode+1)/DECAY_FACTOR)))
-        tau = init_tau + episode * tau_inc
+        tau += episode * tau_inc
     return episode, sr_record, tr_record, resolution_time
     
     
@@ -233,11 +229,11 @@ def simulation(size_maze, RL_ALGO, EXPLORE_METHOD, eps_decay, seed):
 if __name__ == "__main__":
     if ((len(sys.argv) < 5) or ((int(sys.argv[1]) != 10) and (int(sys.argv[1]) != 20)  and (int(sys.argv[1]) != 50))):
         print("The correct syntax is : \n")
-        print("python compareRL_Algos.py size_maze exploration eps_decay seed\n")
+        print("python compareRL_Algos2.py size_maze exploration_method eps_decay seed\n")
         print("where     size_maze is either 10 or 20 or 50")
-        print("          exploration denotes the exploration either \"epsilon_greedy\" or \"softmax\" (the latter does not work for the moment...)")
+        print("          exploration_method denotes either \"epsilon_greedy\" or \"softmax\" (the latter does not work for the moment...)")
         print("          if eps_decay>=0: eps<-eps*eps_decay ; otherwise, other update of eps")
-        print("          seed initiates the random process deterministically")
+        print("          seed initializes the random process deterministically")
         sys.exit(1)
         
     # we define the arguments/parameters as variables
@@ -252,8 +248,8 @@ if __name__ == "__main__":
     plt.figure(1)
     plt.plot(range(0,n_episode_S,10),sr_S[0::10], label=SARSA)
     plt.plot(range(0,n_episode_Q,10),sr_Q[0::10], label=Q_LEARNING)
-    plt.title("Success rate in function of the episodes with size={0} and ε_decay={1}".format(size_maze, eps_decay))
-    plt.savefig("Simulations/compareRL_Algos/size{0}/decay{1}/compareRL_Algos_successRate.png".format(size_maze, eps_decay))
+    plt.title("Success rate in function of the episodes with ε_decay={0} and size={1}".format(eps_decay, size_maze))
+    plt.savefig("Figures/CompareRL_Algos/successRate_exploration_with_{0}_decay{1}_size{2}.png".format(EXPLORE_METHOD, eps_decay, size_maze))
     plt.xlabel("Episodes")
     plt.ylabel("Success Rate")
     plt.legend()
@@ -261,8 +257,8 @@ if __name__ == "__main__":
     plt.figure(2)
     plt.plot(range(0,n_episode_S,10),tr_S[0::10], label=SARSA)
     plt.plot(range(0,n_episode_Q,10),tr_Q[0::10], label=Q_LEARNING)
-    plt.title("Total reward in function of the episodes with size={0} and ε_decay={1}".format(size_maze, eps_decay))
-    plt.savefig("Simulations/compareRL_Algos/size{0}/decay{1}/compareRL_Algos_totalReward.png".format(size_maze, eps_decay))
+    plt.title("Total reward in function of the episodes with ε_decay={0} and size={1}".format(eps_decay, size_maze))
+    plt.savefig("Figures/CompareRL_Algos/totalReward_exploration_with_{0}_decay{1}_size{2}.png".format(EXPLORE_METHOD, eps_decay, size_maze))
     plt.xlabel("Episodes")
     plt.ylabel("Total Reward")
     plt.legend()
@@ -270,8 +266,8 @@ if __name__ == "__main__":
     plt.figure(3)
     plt.plot(range(0,n_episode_S,10),resolution_time_S[0::10], label=SARSA)
     plt.plot(range(0,n_episode_Q,10),resolution_time_Q[0::10], label=Q_LEARNING)
-    plt.title("Resolution time in function of the episodes with size={0} and ε_decay={1}".format(size_maze, eps_decay))
-    plt.savefig("Simulations/compareRL_Algos/size{0}/decay{1}/compareRL_Algos_resolutionTime.png".format(size_maze, eps_decay))
+    plt.title("Resolution time in function of the episodes with ε_decay={0} and size={1}".format(eps_decay, size_maze))
+    plt.savefig("Figures/CompareRL_Algos/resolutionTime_exploration_with_{0}_decay{1}_size{2}.png".format(EXPLORE_METHOD, eps_decay, size_maze))
     plt.xlabel("Episodes")
     plt.ylabel("Resolution Time")
     plt.legend()
