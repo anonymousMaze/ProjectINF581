@@ -231,7 +231,7 @@ def simulation(size_maze, RL_ALGO, EXPLORE_METHOD, eps_decay, seed):
 
 
 if __name__ == "__main__":
-    if ((len(sys.argv) < 5) or ((int(sys.argv[1]) != 10) and (int(sys.argv[1]) != 20)  and (int(sys.argv[1]) != 50))):
+    if ((len(sys.argv) < 5) or ((int(sys.argv[1]) != 10) and (int(sys.argv[1]) != 20)  and (int(sys.argv[1]) != 30))):
         print("The correct syntax is : \n")
         print("python compareRL_Algos.py size_maze exploration_method eps_decay seed\n")
         print("where     size_maze is either 10 or 20 or 50")
@@ -253,28 +253,28 @@ if __name__ == "__main__":
     plt.plot(range(0,n_episode_S,10),sr_S[0::10], label=SARSA)
     plt.plot(range(0,n_episode_Q,10),sr_Q[0::10], label=Q_LEARNING)
     plt.title("Success rate in function of the episodes with ε_decay={0} and size={1}".format(eps_decay, size_maze))
-    plt.savefig("Simulations/CompareRL_Algos/Figures/successRate_exploration_with_{0}_decay{1}_size{2}.png".format(EXPLORE_METHOD, eps_decay, size_maze))
     plt.xlabel("Episodes")
     plt.ylabel("Success Rate")
     plt.legend()
+    plt.savefig("Simulations/CompareRL_Algos/Figures/successRate_exploration_with_{0}_decay{1}_size{2}.png".format(EXPLORE_METHOD, eps_decay, size_maze))
     
     plt.figure(2)
     plt.plot(range(0,n_episode_S,10),tr_S[0::10], label=SARSA)
     plt.plot(range(0,n_episode_Q,10),tr_Q[0::10], label=Q_LEARNING)
     plt.title("Total reward in function of the episodes with ε_decay={0} and size={1}".format(eps_decay, size_maze))
-    plt.savefig("Simulations/CompareRL_Algos/Figures/totalReward_exploration_with_{0}_decay{1}_size{2}.png".format(EXPLORE_METHOD, eps_decay, size_maze))
     plt.xlabel("Episodes")
     plt.ylabel("Total Reward")
     plt.legend()
+    plt.savefig("Simulations/CompareRL_Algos/Figures/totalReward_exploration_with_{0}_decay{1}_size{2}.png".format(EXPLORE_METHOD, eps_decay, size_maze))
     
     plt.figure(3)
     plt.plot(range(0,n_episode_S,10),resolution_time_S[0::10], label=SARSA)
     plt.plot(range(0,n_episode_Q,10),resolution_time_Q[0::10], label=Q_LEARNING)
     plt.title("Resolution time in function of the episodes with ε_decay={0} and size={1}".format(eps_decay, size_maze))
-    plt.savefig("Simulations/CompareRL_Algos/Figures/resolutionTime_exploration_with_{0}_decay{1}_size{2}.png".format(EXPLORE_METHOD, eps_decay, size_maze))
     plt.xlabel("Episodes")
     plt.ylabel("Resolution Time")
     plt.legend()
+    plt.savefig("Simulations/CompareRL_Algos/Figures/resolutionTime_exploration_with_{0}_decay{1}_size{2}.png".format(EXPLORE_METHOD, eps_decay, size_maze))
     plt.show()
     
     
