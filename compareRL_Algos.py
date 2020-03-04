@@ -7,6 +7,10 @@ import gym
 import gym_maze
 import matplotlib.pyplot as plt
 
+# save numpy array as npy files
+from numpy import asarray
+from numpy import save
+
 # Meta parameters for the RL agent
 #tau = init_tau = 1
 #tau_inc = 0.01
@@ -29,7 +33,7 @@ STREAK_TO_END = 120 # number of "success" (i.e. how quick the maze is solved) ne
 
 
 
-# A typical command to use this program from terminal is: python file.py size_maze exploration_method eps_decay seed
+# A typical command to use this program from terminal is: python compareRL_Algos.py size_maze exploration_method eps_decay seed
 
 # Beware states are tuple of size 2. To facilitate, we will use (i,j)=s beforehand.
 
@@ -229,7 +233,7 @@ def simulation(size_maze, RL_ALGO, EXPLORE_METHOD, eps_decay, seed):
 if __name__ == "__main__":
     if ((len(sys.argv) < 5) or ((int(sys.argv[1]) != 10) and (int(sys.argv[1]) != 20)  and (int(sys.argv[1]) != 50))):
         print("The correct syntax is : \n")
-        print("python compareRL_Algos2.py size_maze exploration_method eps_decay seed\n")
+        print("python compareRL_Algos.py size_maze exploration_method eps_decay seed\n")
         print("where     size_maze is either 10 or 20 or 50")
         print("          exploration_method denotes either \"epsilon_greedy\" or \"softmax\" (the latter does not work for the moment...)")
         print("          if eps_decay>=0: eps<-eps*eps_decay ; otherwise, other update of eps")
@@ -240,16 +244,16 @@ if __name__ == "__main__":
     size_maze = int(sys.argv[1])
     EXPLORE_METHOD = sys.argv[2] # either SOFTMAX, EPSILON_GREEDY
     eps_decay = float(sys.argv[3])
-    seed = int(sys.argv[4])
+    SEED = int(sys.argv[4])
     
-    n_episode_S, sr_S, tr_S, resolution_time_S = simulation(size_maze, SARSA, EXPLORE_METHOD, eps_decay, seed)
-    n_episode_Q, sr_Q, tr_Q, resolution_time_Q = simulation(size_maze, Q_LEARNING, EXPLORE_METHOD, eps_decay, seed)
+    n_episode_S, sr_S, tr_S, resolution_time_S = simulation(size_maze, SARSA, EXPLORE_METHOD, eps_decay, SEED)
+    n_episode_Q, sr_Q, tr_Q, resolution_time_Q = simulation(size_maze, Q_LEARNING, EXPLORE_METHOD, eps_decay, SEED)
     
     plt.figure(1)
     plt.plot(range(0,n_episode_S,10),sr_S[0::10], label=SARSA)
     plt.plot(range(0,n_episode_Q,10),sr_Q[0::10], label=Q_LEARNING)
     plt.title("Success rate in function of the episodes with ε_decay={0} and size={1}".format(eps_decay, size_maze))
-    plt.savefig("Figures/CompareRL_Algos/successRate_exploration_with_{0}_decay{1}_size{2}.png".format(EXPLORE_METHOD, eps_decay, size_maze))
+    plt.savefig("Simulations/CompareRL_Algos/Figures/successRate_exploration_with_{0}_decay{1}_size{2}.png".format(EXPLORE_METHOD, eps_decay, size_maze))
     plt.xlabel("Episodes")
     plt.ylabel("Success Rate")
     plt.legend()
@@ -258,7 +262,7 @@ if __name__ == "__main__":
     plt.plot(range(0,n_episode_S,10),tr_S[0::10], label=SARSA)
     plt.plot(range(0,n_episode_Q,10),tr_Q[0::10], label=Q_LEARNING)
     plt.title("Total reward in function of the episodes with ε_decay={0} and size={1}".format(eps_decay, size_maze))
-    plt.savefig("Figures/CompareRL_Algos/totalReward_exploration_with_{0}_decay{1}_size{2}.png".format(EXPLORE_METHOD, eps_decay, size_maze))
+    plt.savefig("Simulations/CompareRL_Algos/Figures/totalReward_exploration_with_{0}_decay{1}_size{2}.png".format(EXPLORE_METHOD, eps_decay, size_maze))
     plt.xlabel("Episodes")
     plt.ylabel("Total Reward")
     plt.legend()
@@ -267,8 +271,34 @@ if __name__ == "__main__":
     plt.plot(range(0,n_episode_S,10),resolution_time_S[0::10], label=SARSA)
     plt.plot(range(0,n_episode_Q,10),resolution_time_Q[0::10], label=Q_LEARNING)
     plt.title("Resolution time in function of the episodes with ε_decay={0} and size={1}".format(eps_decay, size_maze))
-    plt.savefig("Figures/CompareRL_Algos/resolutionTime_exploration_with_{0}_decay{1}_size{2}.png".format(EXPLORE_METHOD, eps_decay, size_maze))
+    plt.savefig("Simulations/CompareRL_Algos/Figures/resolutionTime_exploration_with_{0}_decay{1}_size{2}.png".format(EXPLORE_METHOD, eps_decay, size_maze))
     plt.xlabel("Episodes")
     plt.ylabel("Resolution Time")
     plt.legend()
     plt.show()
+    
+    
+    # and we store the arrays in .npy files
+    ALGO = SARSA
+    srS = asarray(sr_S)
+    save('Simulations/CompareRL_Algos/Arrays/SuccessRate/srS-exploration_with_{0}_{1}_eps_decay{2}_size{3}_seed{4}.npy'.format(EXPLORE_METHOD, ALGO, eps_decay, size_maze, SEED), srS)
+    trS = asarray(tr_S)
+    save('Simulations/CompareRL_Algos/Arrays/TotalReward/trS-exploration_with_{0}_{1}_eps_decay{2}_size{3}_seed{4}.npy'.format(EXPLORE_METHOD, ALGO, eps_decay, size_maze, SEED), trS)
+    resolution_timeS = asarray(resolution_time_S)
+    save('Simulations/CompareRL_Algos/Arrays/ResolutionTime/rtS-exploration_with_{0}_{1}_eps_decay{2}_size{3}_seed{4}.npy'.format(EXPLORE_METHOD, ALGO, eps_decay, size_maze, SEED), resolution_timeS)
+        
+    ALGO = Q_LEARNING
+    srQ = asarray(sr_Q)
+    save('Simulations/CompareRL_Algos/Arrays/SuccessRate/srQ-exploration_with_{0}_{1}_eps_decay{2}_size{3}_seed{4}.npy'.format(EXPLORE_METHOD, ALGO, eps_decay, size_maze, SEED), srQ)
+    trQ = asarray(tr_Q)
+    save('Simulations/CompareRL_Algos/Arrays/TotalReward/trQ-exploration_with_{0}_{1}_eps_decay{2}_size{3}_seed{4}.npy'.format(EXPLORE_METHOD, ALGO, eps_decay, size_maze, SEED), trQ)
+    resolution_timeQ = asarray(resolution_time_Q)
+    save('Simulations/CompareRL_Algos/Arrays/ResolutionTime/rtQ-exploration_with_{0}_{1}_eps_decay{2}_size{3}_seed{4}.npy'.format(EXPLORE_METHOD, ALGO, eps_decay, size_maze, SEED), resolution_timeQ)
+        
+
+
+
+
+
+
+

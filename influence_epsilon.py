@@ -1,11 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Wed Mar  4 11:17:37 2020
-
-@author: Romain
-"""
-
 import sys
 import numpy as np
 import math
@@ -15,7 +7,7 @@ import gym
 import gym_maze
 import matplotlib.pyplot as plt
 
-# save numpy array as npy file
+# save numpy array as npy files
 from numpy import asarray
 from numpy import save
 
@@ -36,11 +28,10 @@ NUM_EPISODES = 1000
 STREAK_TO_END = 120 # number of "success" (i.e. how quick the maze is solved) needed to assess the good performance of a process
 
 
-# A typical command to use this program from terminal is: python file.py size_maze RL_ALGO seed
+# A typical command to use this program from terminal is: python influence_epsilon.py size_maze RL_ALGO seed
 
 """
 We will use 6 labels to compare the algoithms: 
-
     # ε = 0 --> greedy (label=1)
     # ε = 0.01 (label=2)
     # ε = 0.1 (label=3)
@@ -49,7 +40,6 @@ We will use 6 labels to compare the algoithms:
     # ε = 0.5 & ε_decay=0.999 (label=6)
     
 The first one enhances the exploitation (very greedy) and the following algorithms are more and more exploring paths randomly. 
-
 """
 
 label1 = "ε = 0"
@@ -70,11 +60,12 @@ def sarsa_update(q,s,a,r,s_prime,a_prime,learning_rate):
     return q[i, j, a] + learning_rate * td
 
 # Compute Q-Learning update
-def q_learning_update(q,s,a,r,s_prime, learning_rate):
+def q_learning_update(q,s,a,r,s_prime,learning_rate):
     (i, j) = s
     (i_prime, j_prime) = s_prime 
     td = r + gamma * np.max(q[i_prime, j_prime, :]) - q[i, j, a]
     return q[i, j, a] + learning_rate * td
+
 
 # Draw a softmax sample but needs to improve !
 def softmax(q, tau):
@@ -133,7 +124,6 @@ def simulation(size_maze, RL_ALGO, seed=13, eps_start=0.5, eps_decay=1, EXPLORE_
     '''
     Defining the environment related constants
     '''
-    
     # Number of discrete actions
     NUM_ACTIONS = env.action_space.n  # = 4 : ["N", "S", "E", "W"]
     '''
@@ -286,16 +276,21 @@ if __name__ == "__main__":
     EXPLORE_METHOD = EPSILON_GREEDY
     
     n_episode_1, sr_1, tr_1, resolution_time_1 = simulation(size_maze, ALGO, seed=SEED, eps_start=0) # ε = 0 --> greedy (label=1)
+    print("ONE is OK")
     n_episode_2, sr_2, tr_2, resolution_time_2 = simulation(size_maze, ALGO, seed=SEED, eps_start=0.01) # ε = 0.01 (label=2)
     n_episode_3, sr_3, tr_3, resolution_time_3 = simulation(size_maze, ALGO, seed=SEED, eps_start=0.1) # ε = 0.1 (label=3)
+    
+#    n_episode_1, sr_1, tr_1, resolution_time_1 = simulation(size_maze, ALGO, seed=SEED, eps_start=0.5, eps_decay=0.9) # ε = 0 --> greedy (label=1)
+#    n_episode_2, sr_2, tr_2, resolution_time_2 = simulation(size_maze, ALGO, seed=SEED, eps_start=0.5, eps_decay=0.9) # ε = 0.01 (label=2)
+#    n_episode_3, sr_3, tr_3, resolution_time_3 = simulation(size_maze, ALGO, seed=SEED, eps_start=0.5, eps_decay=0.9) # ε = 0.1 (label=3)
+#    
     n_episode_4, sr_4, tr_4, resolution_time_4 = simulation(size_maze, ALGO, seed=SEED, eps_start=0.5, eps_decay=0.9) # ε = 0.5 & ε_decay=0.9 (label=4)
     n_episode_5, sr_5, tr_5, resolution_time_5 = simulation(size_maze, ALGO, seed=SEED, eps_start=0.5, eps_decay=0.99) # ε = 0.5 & ε_decay=0.99 (label=5)
     n_episode_6, sr_6, tr_6, resolution_time_6 = simulation(size_maze, ALGO, seed=SEED, eps_start=0.5, eps_decay=0.999) # ε = 0.5 & ε_decay=0.999 (label=6)
     
     
-    
     # Plot results
-    # SUCCESS RATE:
+    # ... for SUCCESS RATE:
     plt.figure(0)
     plt.plot(range(0,n_episode_1,10),sr_1[0::10], label=label1)
     plt.plot(range(0,n_episode_2,10),sr_2[0::10], label=label2)
@@ -307,9 +302,9 @@ if __name__ == "__main__":
     plt.xlabel("Episodes")
     plt.ylabel("Success Rate")
     plt.legend()
-    plt.savefig("Simulations/influence_epsilon/size{0}/{1}/figures/epsilon-influence_successRate.png".format(size_maze, ALGO))
+    plt.savefig("Simulations/Influence_Epsilon/{0}/Figures/influence_of_EpsilonONsuccessRate_with_ALGO_{0}_size{1}.png".format(ALGO, size_maze))
     
-    # TOTAL REWARD:
+    # ... for TOTAL REWARD:
     plt.figure(1)
     plt.plot(range(0,n_episode_1,10),tr_1[0::10], label=label1)
     plt.plot(range(0,n_episode_2,10),tr_2[0::10], label=label2)
@@ -321,10 +316,10 @@ if __name__ == "__main__":
     plt.xlabel("Episodes")
     plt.ylabel("Total Reward")
     plt.legend()
-    plt.savefig("Simulations/influence_epsilon/size{0}/{1}/figures/epsilon-influence_totalReward.png".format(size_maze, ALGO))
+    plt.savefig("Simulations/Influence_Epsilon/{0}/Figures/influence_of_EpsilonONtotalReward_with_ALGO_{0}_size{1}.png".format(ALGO, size_maze))
     
     
-    # RESOLUTION TIME
+    # ... for RESOLUTION TIME
     plt.figure(2)
     plt.plot(range(0, n_episode_1, 10),resolution_time_1[0::10], label=label1)
     plt.plot(range(0, n_episode_2, 10),resolution_time_2[0::10], label=label2)
@@ -336,48 +331,46 @@ if __name__ == "__main__":
     plt.xlabel("Episodes")
     plt.ylabel("Resolution Time")
     plt.legend()
-    plt.savefig("Simulations/influence_epsilon/size{0}/{1}/figures/epsilon-influence_resolutionTime.png".format(size_maze, ALGO))
+    plt.savefig("Simulations/Influence_Epsilon/{0}/Figures/influence_of_EpsilonONresolutionTime_with_ALGO_{0}_size{1}.png".format(ALGO, size_maze))
     plt.show()
-
-
-
+    
+    
     if ((ALGO == "SARSA") or (ALGO == "Q_learning")):
         sr1 = asarray(sr_1)
-        save('Simulations/influence_epsilon/size{0}/{1}/success_rate/sr1.npy'.format(size_maze, ALGO), sr1)
+        save('Simulations/Influence_Epsilon/{0}/Arrays/SuccessRate/sr1-influence_eps_{0}_size{1}_seed{2}.npy'.format(ALGO, size_maze, SEED), sr1)
         sr2 = asarray(sr_2)
-        save('Simulations/influence_epsilon/size{0}/{1}/success_rate/sr2.npy'.format(size_maze, ALGO), sr2)
+        save('Simulations/Influence_Epsilon/{0}/Arrays/SuccessRate/sr2-influence_eps_{0}_size{1}_seed{2}.npy'.format(ALGO, size_maze, SEED), sr2)
         sr3 = asarray(sr_3)
-        save('Simulations/influence_epsilon/size{0}/{1}/success_rate/sr3.npy'.format(size_maze, ALGO), sr3)
+        save('Simulations/Influence_Epsilon/{0}/Arrays/SuccessRate/sr3-influence_eps_{0}_size{1}_seed{2}.npy'.format(ALGO, size_maze, SEED), sr3)
         sr4 = asarray(sr_4)
-        save('Simulations/influence_epsilon/size{0}/{1}/success_rate/sr4.npy'.format(size_maze, ALGO), sr4)
+        save('Simulations/Influence_Epsilon/{0}/Arrays/SuccessRate/sr4-influence_eps_{0}_size{1}_seed{2}.npy'.format(ALGO, size_maze, SEED), sr4)
         sr5 = asarray(sr_5)
-        save('Simulations/influence_epsilon/size{0}/{1}/success_rate/sr5.npy'.format(size_maze, ALGO), sr5)
+        save('Simulations/Influence_Epsilon/{0}/Arrays/SuccessRate/sr5-influence_eps_{0}_size{1}_seed{2}.npy'.format(ALGO, size_maze, SEED), sr5)
         sr6 = asarray(sr_6)
-        save('Simulations/influence_epsilon/size{0}/{1}/success_rate/sr6.npy'.format(size_maze, ALGO), sr6)
+        save('Simulations/Influence_Epsilon/{0}/Arrays/SuccessRate/sr6-influence_eps_{0}_size{1}_seed{2}.npy'.format(ALGO, size_maze, SEED), sr6)
         
         tr1 = asarray(tr_1)
-        save('Simulations/influence_epsilon/size{0}/{1}/success_rate/sr1.npy'.format(size_maze, ALGO), sr1)
+        save('Simulations/Influence_Epsilon/{0}/Arrays/TotalReward/tr1-influence_eps_{0}_size{1}_seed{2}.npy'.format(ALGO, size_maze, SEED), tr1)
         tr2 = asarray(tr_2)
-        save('Simulations/influence_epsilon/size{0}/{1}/success_rate/sr2.npy'.format(size_maze, ALGO), sr2)
+        save('Simulations/Influence_Epsilon/{0}/Arrays/TotalReward/tr2-influence_eps_{0}_size{1}_seed{2}.npy'.format(ALGO, size_maze, SEED), tr2)
         tr3 = asarray(tr_3)
-        save('Simulations/influence_epsilon/size{0}/{1}/success_rate/sr3.npy'.format(size_maze, ALGO), sr3)
+        save('Simulations/Influence_Epsilon/{0}/Arrays/TotalReward/tr3-influence_eps_{0}_size{1}_seed{2}.npy'.format(ALGO, size_maze, SEED), tr3)
         tr4 = asarray(tr_4)
-        save('Simulations/influence_epsilon/size{0}/{1}/success_rate/sr4.npy'.format(size_maze, ALGO), sr4)
+        save('Simulations/Influence_Epsilon/{0}/Arrays/TotalReward/tr4-influence_eps_{0}_size{1}_seed{2}.npy'.format(ALGO, size_maze, SEED), tr4)
         tr5 = asarray(tr_5)
-        save('Simulations/influence_epsilon/size{0}/{1}/success_rate/sr5.npy'.format(size_maze, ALGO), sr5)
+        save('Simulations/Influence_Epsilon/{0}/Arrays/TotalReward/tr5-influence_eps_{0}_size{1}_seed{2}.npy'.format(ALGO, size_maze, SEED), tr5)
         tr6 = asarray(tr_6)
-        save('Simulations/influence_epsilon/size{0}/{1}/success_rate/sr6.npy'.format(size_maze, ALGO), sr6)
-    
+        save('Simulations/Influence_Epsilon/{0}/Arrays/TotalReward/tr6-influence_eps_{0}_size{1}_seed{2}.npy'.format(ALGO, size_maze, SEED), tr6)
+        
         resolution_time1 = asarray(resolution_time_1)
-        save('Simulations/influence_epsilon/size{0}/{1}/resolution_time/rt1.npy'.format(size_maze, ALGO), resolution_time1)
+        save('Simulations/Influence_Epsilon/{0}/Arrays/ResolutionTime/rt1-influence_eps_{0}_size{1}_seed{2}.npy'.format(ALGO, size_maze, SEED), resolution_time1)
         resolution_time2 = asarray(resolution_time_2)
-        save('Simulations/influence_epsilon/size{0}/{1}/resolution_time/rt2.npy'.format(size_maze, ALGO), resolution_time2)
+        save('Simulations/Influence_Epsilon/{0}/Arrays/ResolutionTime/rt2-influence_eps_{0}_size{1}_seed{2}.npy'.format(ALGO, size_maze, SEED), resolution_time2)
         resolution_time3 = asarray(resolution_time_3)
-        save('Simulations/influence_epsilon/size{0}/{1}/resolution_time/rt3.npy'.format(size_maze, ALGO), resolution_time3)
+        save('Simulations/Influence_Epsilon/{0}/Arrays/ResolutionTime/rt3-influence_eps_{0}_size{1}_seed{2}.npy'.format(ALGO, size_maze, SEED), resolution_time3)
         resolution_time4 = asarray(resolution_time_4)
-        save('Simulations/influence_epsilon/size{0}/{1}/resolution_time/rt4.npy'.format(size_maze, ALGO), resolution_time4)
+        save('Simulations/Influence_Epsilon/{0}/Arrays/ResolutionTime/rt4-influence_eps_{0}_size{1}_seed{2}.npy'.format(ALGO, size_maze, SEED), resolution_time4)
         resolution_time5 = asarray(resolution_time_5)
-        save('Simulations/influence_epsilon/size{0}/{1}/resolution_time/rt5.npy'.format(size_maze, ALGO), resolution_time5)
+        save('Simulations/Influence_Epsilon/{0}/Arrays/ResolutionTime/rt5-influence_eps_{0}_size{1}_seed{2}.npy'.format(ALGO, size_maze, SEED), resolution_time5)
         resolution_time6 = asarray(resolution_time_6)
-        save('Simulations/influence_epsilon/size{0}/{1}/resolution_time/rt6.npy'.format(size_maze, ALGO), resolution_time6)
-
+        save('Simulations/Influence_Epsilon/{0}/Arrays/ResolutionTime/rt6-influence_eps_{0}_size{1}_seed{2}.npy'.format(ALGO, size_maze, SEED), resolution_time6)
