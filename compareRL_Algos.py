@@ -24,11 +24,13 @@ Q_LEARNING = "Q_learning"
 # ... and methods of exploration:
 SOFTMAX = "softmax"
 EPSILON_GREEDY = "epsilon_greedy"
-GREEDY = "greedy"
 
 NUM_EPISODES = 1000
+STREAK_TO_END = 120 # number of "success" (i.e. how quick the maze is solved) needed to assess the good performance of a process
 
 
+
+# A typical command to use this program from terminal is: python file.py size_maze exploration_method seed
 
 # Beware states are tuple of size 2. To facilitate, we will use (i,j)=s beforehand.
 
@@ -47,7 +49,7 @@ def q_learning_update(q,s,a,r,s_prime, learning_rate):
     return q[i, j, a] + learning_rate * td
 
 # Draw a softmax sample
-def softmax(q, tau):
+def softmax(q, tau): # q is of shape (4,)
     assert tau >= 0.0
     q_tilde = q - np.max(q)
     factors = np.exp(tau * q_tilde)
@@ -80,7 +82,7 @@ def getTupple(s):
 def simulation(size_maze, RL_ALGO, EXPLORE_METHOD, eps_decay, seed):
 
     # Random seed
-    np.random.RandomState(seed)
+    random.seed(seed)
     
     # Initialize the "maze" environment with the given size
     env_name = "maze-random-" + str(size_maze) + "x" + str(size_maze) + "-plus-v0"
@@ -89,16 +91,12 @@ def simulation(size_maze, RL_ALGO, EXPLORE_METHOD, eps_decay, seed):
     '''
     Defining the environment related constants
     '''
-    # Number of discrete states (bucket) per state dimension
-    MAZE_SIZE = tuple((env.observation_space.high + np.ones(env.observation_space.shape)).astype(int)) # = (size_maze, size_maze)
-    #MAZE_SIZE = (size_maze, size_maze)
-    # Number of discrete actions
-    NUM_ACTIONS = env.action_space.n  # ["N", "S", "E", "W"]
+    NUM_ACTIONS = env.action_space.n  # = 4 : ["N", "S", "E", "W"]
     '''
     Learning related constants
     '''
     MIN_EXPLORE_RATE = 0.01
-    DECAY_FACTOR = np.prod(MAZE_SIZE, dtype=float) / 10.0
+    DECAY_FACTOR = size_maze * size_maze / 10.0
     
     tau = init_tau = 1
     tau_inc = 0.01
@@ -106,9 +104,8 @@ def simulation(size_maze, RL_ALGO, EXPLORE_METHOD, eps_decay, seed):
     '''
     Defining the simulation related constants
     '''
-    MAX_T = np.prod(MAZE_SIZE, dtype=int) * 100 # limit of steps in one episode after time out 
-    SOLVED_T = np.prod(MAZE_SIZE, dtype=int) # number of step not to exceed to have a success in a give episode
-    STREAK_TO_END = 120 # number of "success" needed to assess the good performance of a process
+    MAX_T = size_maze * size_maze * 100 # limit of steps in one episode after time out 
+    SOLVED_T = size_maze * size_maze # number of step not to exceed to have a success in a give episode
 
     '''
     Creating a Q-Table for each state-action pair
@@ -146,14 +143,17 @@ def simulation(size_maze, RL_ALGO, EXPLORE_METHOD, eps_decay, seed):
         # Select the first action
         if EXPLORE_METHOD == SOFTMAX:
             action = act_with_softmax(state, q_table, tau)
+            print("action :", action)
         elif EXPLORE_METHOD == EPSILON_GREEDY:
             action = act_with_epsilon_greedy(state, q_table, epsilon, env)
+            print("action :", action)
         else:
             raise ValueError("Wrong Explore Method:".format(EXPLORE_METHOD))
 
         for t in range(MAX_T):
 
             # Act
+            print("action ------->", action)
             obv, reward, done, info = env.step(action)
 
             # Observe the result
@@ -228,6 +228,8 @@ def simulation(size_maze, RL_ALGO, EXPLORE_METHOD, eps_decay, seed):
     
     
 
+
+
 if __name__ == "__main__":
     if ((len(sys.argv) < 5) or ((int(sys.argv[1]) != 10) and (int(sys.argv[1]) != 20))):
         print("The correct syntax is : \n")
@@ -240,7 +242,7 @@ if __name__ == "__main__":
         
     # we define the arguments/parameters as variables
     size_maze = int(sys.argv[1])
-    EXPLORE_METHOD = sys.argv[2] # either SOFTMAX, EPSILON_GREEDY, GREEDY
+    EXPLORE_METHOD = sys.argv[2] # either SOFTMAX, EPSILON_GREEDY
     eps_decay = float(sys.argv[3])
     seed = int(sys.argv[4])
     
@@ -250,18 +252,18 @@ if __name__ == "__main__":
     plt.figure(1)
     plt.plot(range(0,n_episode_S,10),sr_S[0::10], label=SARSA)
     plt.plot(range(0,n_episode_Q,10),sr_Q[0::10], label=Q_LEARNING)
-    plt.title("Success rate in function of the episodes with size={0}".format(size_maze))
+    plt.title("Success rate in function of the episodes with size={0} and ε_decay={1}".format(size_maze, eps_decay))
     plt.legend()
     
     plt.figure(2)
     plt.plot(range(0,n_episode_S,10),tr_S[0::10], label=SARSA)
     plt.plot(range(0,n_episode_Q,10),tr_Q[0::10], label=Q_LEARNING)
-    plt.title("Total reward in function of the episodes with size={0}".format(size_maze))
+    plt.title("Total reward in function of the episodes with size={0} and ε_decay={1}".format(size_maze, eps_decay))
     plt.legend()
     
     plt.figure(3)
     plt.plot(range(0,n_episode_S,10),resolution_time_S[0::10], label=SARSA)
     plt.plot(range(0,n_episode_Q,10),resolution_time_Q[0::10], label=Q_LEARNING)
-    plt.title("Resolution time in function of the episodes with size={0}".format(size_maze))
+    plt.title("Resolution time in function of the episodes with size={0} and ε_decay={1}".format(size_maze, eps_decay))
     plt.legend()
     plt.show()
