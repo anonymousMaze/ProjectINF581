@@ -143,17 +143,17 @@ def simulation(size_maze, RL_ALGO, EXPLORE_METHOD, eps_decay, seed):
         # Select the first action
         if EXPLORE_METHOD == SOFTMAX:
             action = act_with_softmax(state, q_table, tau)
-            print("action :", action)
+            #print("action :", action)
         elif EXPLORE_METHOD == EPSILON_GREEDY:
             action = act_with_epsilon_greedy(state, q_table, epsilon, env)
-            print("action :", action)
+            #print("action :", action)
         else:
             raise ValueError("Wrong Explore Method:".format(EXPLORE_METHOD))
 
         for t in range(MAX_T):
 
             # Act
-            print("action ------->", action)
+            #print("action ------->", action)
             obv, reward, done, info = env.step(action)
 
             # Observe the result
