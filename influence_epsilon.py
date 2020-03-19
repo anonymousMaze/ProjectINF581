@@ -1,47 +1,26 @@
 import sys
-import numpy as np
-import math
-import random
-from collections import deque
-import gym
-import gym_maze
 import matplotlib.pyplot as plt
+
+from simulation import simulation
 
 # save numpy array as npy files
 from numpy import asarray
 from numpy import save
 
-gamma = 0.99
-learning_rate = 0.1
-verbose = True
-RENDER_MAZE = False
-PRINT = False 
 
-# Define types of algorithms:
 SARSA = "SARSA"
 Q_LEARNING = "Q_learning"
-# ... and methods of exploration:
-SOFTMAX = "softmax"
-EPSILON_GREEDY = "epsilon_greedy"
 
-NUM_EPISODES = 1000
-STREAK_TO_END = 120 # number of "success" (i.e. how quick the maze is solved) needed to assess the good performance of a process
+EPSILON_GREEDY = "epsilon_greedy"
 
 
 # A typical command to use this program from terminal is: python influence_epsilon.py size_maze RL_ALGO seed
 
 """
-We will use 6 labels to compare the algoithms: 
-    # ε = 0 --> greedy (label=1)
-    # ε = 0.01 (label=2)
-    # ε = 0.1 (label=3)
-    # ε = 0.5 & ε_decay=0.9 (label=4)
-    # ε = 0.5 & ε_decay=0.99 (label=5)
-    # ε = 0.5 & ε_decay=0.999 (label=6)
-    
-The first one enhances the exploitation (very greedy) and the following algorithms are more and more exploring paths randomly. 
-"""
+We will use 6 labels to compare the two algorithms.
 
+The first one enhances the exploitation (very greedy ε = 0) and the following algorithms are more and more exploring paths randomly. 
+"""
 label1 = "ε = 0"
 label2 = "ε = 0.01"
 label3 = "ε = 0.1"
@@ -50,213 +29,6 @@ label5 = "ε = 0.5 & ε_decay=0.99"
 label6 = "ε = 0.5 & ε_decay=0.999"
 
 
-# Beware states are tuple of size 2. To facilitate, we will use (i,j)=s beforehand.
-
-# Compute SARSA update
-def sarsa_update(q,s,a,r,s_prime,a_prime,learning_rate):
-    (i, j) = s
-    (i_prime, j_prime) = s_prime 
-    td = r + gamma * q[i_prime, j_prime, a_prime] - q[i, j, a]
-    return q[i, j, a] + learning_rate * td
-
-# Compute Q-Learning update
-def q_learning_update(q,s,a,r,s_prime,learning_rate):
-    (i, j) = s
-    (i_prime, j_prime) = s_prime 
-    td = r + gamma * np.max(q[i_prime, j_prime, :]) - q[i, j, a]
-    return q[i, j, a] + learning_rate * td
-
-
-# Draw a softmax sample but needs to improve !
-def softmax(q, tau):
-    assert tau >= 0.0
-    q_tilde = q - np.max(q)
-    factors = np.exp(tau * q_tilde)
-    return factors / np.sum(factors)
-
-# Act with softmax
-def act_with_softmax(s, q, tau):
-    (i,j) = s
-    prob_a = softmax(q[i, j, :], tau)
-    cumsum_a = np.cumsum(prob_a)
-    return np.where(np.random.rand() < cumsum_a)[0][0]
-
-# Act with epsilon greedy
-def act_with_epsilon_greedy(s, q, epsilon, env):
-    a = int(np.argmax(q[s]))
-    if np.random.rand() < epsilon:
-        a = env.action_space.sample()
-    return a
-
-
-
-# env.reset() and env.step(action)[0] both return a state with shape (2,) that needs to be converted into a tuple for our us
-def getTupple(s): 
-    i, j = int(s[0]), int(s[1])
-    return (i,j)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-def simulation(size_maze, RL_ALGO, seed=13, eps_start=0.5, eps_decay=1, EXPLORE_METHOD=EPSILON_GREEDY):
-
-    # Random seed
-    random.seed(seed)
-    
-    # Initialize the "maze" environment with the given size
-    env_name = "maze-random-" + str(size_maze) + "x" + str(size_maze) + "-plus-v0"
-    env = gym.make(env_name)
-
-    '''
-    Defining the environment related constants
-    '''
-    # Number of discrete actions
-    NUM_ACTIONS = env.action_space.n  # = 4 : ["N", "S", "E", "W"]
-    '''
-    Learning related constants
-    '''
-    MIN_EXPLORE_RATE = 0.01
-    DECAY_FACTOR = size_maze * size_maze / 10.0
-    
-    tau = init_tau = 1
-    tau_inc = 0.01
-
-    '''
-    Defining the simulation related constants
-    '''
-    MAX_T = size_maze * size_maze * 100 # limit of steps in one episode after time out 
-    SOLVED_T = size_maze * size_maze # number of step not to exceed to have a success in a give episode
-
-    '''
-    Creating a Q-Table for each state-action pair
-        q_table is a tensor of shape (size_maze, size_maze, 4)
-    '''
-    q_table = np.zeros((size_maze, size_maze, NUM_ACTIONS)) 
-
-    # Store parametres and sucess rate
-    sr_record = []
-    tr_record = [] # total reward
-    resolution_time = []
-    window = deque(maxlen = 120)
-
-    # Instantiating the learning related parameters
-    EPS_DECAY = (eps_decay >= 0) # True --> update of eps with eps_decay, False --> eps := max(MIN_EXPLORE_RATE, min(0.8, 1.0 - math.log10((episode+1)/DECAY_FACTOR)))
-    if EPS_DECAY:
-        epsilon = 0.5
-    else: 
-        epsilon = 0.8
-
-    num_streaks = 0
-
-    # Render the maze
-    if RENDER_MAZE:
-        env.render()
-
-    for episode in range(NUM_EPISODES):
-        
-        # Reset the environment and get initial state 
-        s0_array = env.reset() # array([0., 0.]) (shape = (2,)) --> first state of the episode (top left corner)
-        state = getTupple(s0_array)
-        
-        total_reward = 0
-
-        # Select the first action
-        if EXPLORE_METHOD == SOFTMAX:
-            action = act_with_softmax(state, q_table, tau)
-        elif EXPLORE_METHOD == EPSILON_GREEDY:
-            action = act_with_epsilon_greedy(state, q_table, epsilon, env)
-        else:
-            raise ValueError("Wrong Explore Method:".format(EXPLORE_METHOD))
-
-        for t in range(MAX_T):
-
-            # Act
-            obv, reward, done, info = env.step(action)
-
-            # Observe the result
-            state_prime = getTupple(obv) # format of a state
-            total_reward += np.power(gamma,episode) * reward
-
-            # Select an action
-            if EXPLORE_METHOD == SOFTMAX:
-                action_prime = act_with_softmax(state_prime, q_table, tau)
-            elif EXPLORE_METHOD == EPSILON_GREEDY:
-                action_prime = act_with_epsilon_greedy(state_prime, q_table, epsilon, env)
-            
-            (i, j) = state
-            if RL_ALGO == SARSA:
-                q_table[i, j, action] = sarsa_update(q_table,state,action,reward,state_prime,action_prime,learning_rate)
-            elif RL_ALGO == Q_LEARNING:
-                q_table[i, j, action] = q_learning_update(q_table,state,action,reward,state_prime,learning_rate)
-
-            # Setting up for the next iteration
-            state = state_prime
-            action = action_prime
-            
-            # Render the maze
-            if RENDER_MAZE:
-                env.render()
-
-            if env.is_game_over():
-                sys.exit()
-
-            if done:
-                if PRINT:
-                    print("Episode %d finished after %f time steps with total reward = %f (streak %d)."
-                          % (episode, t, total_reward, num_streaks))
-
-                if t <= SOLVED_T:
-                    num_streaks += 1
-                    window.append(1)
-                else:
-                    num_streaks = 0
-                    window.append(0)
-                break
-
-            elif t >= MAX_T - 1:
-                window.append(0)
-                if PRINT: 
-                    print("Episode %d timed out at %d with total reward = %f."
-                          % (episode, t, total_reward))
-
-
-        # It's considered done when it's solved over 120 times consecutively
-        if num_streaks > STREAK_TO_END:
-            break
-
-        # Computes sucess rate
-        sr_record.append(window.count(1)/np.size(window))
-
-        # Store resolution time
-        resolution_time.append(t)
-        
-        # Store total_reward
-        tr_record.append(total_reward)
-
-        
-        # Update parameters
-        if (EPS_DECAY):
-            epsilon = epsilon * eps_decay
-        else: 
-            epsilon = max(MIN_EXPLORE_RATE, min(0.8, 1.0 - math.log10((episode+1)/DECAY_FACTOR)))
-        tau = init_tau + episode * tau_inc
-    return episode, sr_record, tr_record, resolution_time
-    
-    
     
 
 if __name__ == "__main__":
@@ -273,20 +45,12 @@ if __name__ == "__main__":
     ALGO = sys.argv[2] # either SARSA or Q_LEARNING
     SEED = int(sys.argv[3])
     
-    EXPLORE_METHOD = EPSILON_GREEDY
-    
-    n_episode_1, sr_1, tr_1, resolution_time_1 = simulation(size_maze, ALGO, seed=SEED, eps_start=0) # ε = 0 --> greedy (label=1)
-    print("ONE is OK")
-    n_episode_2, sr_2, tr_2, resolution_time_2 = simulation(size_maze, ALGO, seed=SEED, eps_start=0.01) # ε = 0.01 (label=2)
-    n_episode_3, sr_3, tr_3, resolution_time_3 = simulation(size_maze, ALGO, seed=SEED, eps_start=0.1) # ε = 0.1 (label=3)
-    
-#    n_episode_1, sr_1, tr_1, resolution_time_1 = simulation(size_maze, ALGO, seed=SEED, eps_start=0.5, eps_decay=0.9) # ε = 0 --> greedy (label=1)
-#    n_episode_2, sr_2, tr_2, resolution_time_2 = simulation(size_maze, ALGO, seed=SEED, eps_start=0.5, eps_decay=0.9) # ε = 0.01 (label=2)
-#    n_episode_3, sr_3, tr_3, resolution_time_3 = simulation(size_maze, ALGO, seed=SEED, eps_start=0.5, eps_decay=0.9) # ε = 0.1 (label=3)
-#    
-    n_episode_4, sr_4, tr_4, resolution_time_4 = simulation(size_maze, ALGO, seed=SEED, eps_start=0.5, eps_decay=0.9) # ε = 0.5 & ε_decay=0.9 (label=4)
-    n_episode_5, sr_5, tr_5, resolution_time_5 = simulation(size_maze, ALGO, seed=SEED, eps_start=0.5, eps_decay=0.99) # ε = 0.5 & ε_decay=0.99 (label=5)
-    n_episode_6, sr_6, tr_6, resolution_time_6 = simulation(size_maze, ALGO, seed=SEED, eps_start=0.5, eps_decay=0.999) # ε = 0.5 & ε_decay=0.999 (label=6)
+    n_episode_1, sr_1, tr_1, rt_1 = simulation(ALGO, EPSILON_GREEDY, 0, 1, size_maze, SEED) # ε = 0 --> greedy (label=1)
+    n_episode_2, sr_2, tr_2, rt_2 = simulation(ALGO, EPSILON_GREEDY, 0.01, 1, size_maze, SEED) # ε = 0.01 (label=2)
+    n_episode_3, sr_3, tr_3, rt_3 = simulation(ALGO, EPSILON_GREEDY, 0.1, 1, size_maze, SEED) # ε = 0.1 (label=3) 
+    n_episode_4, sr_4, tr_4, rt_4 = simulation(ALGO, EPSILON_GREEDY, 0.5, 0.9, size_maze, SEED) # ε = 0.5 & ε_decay=0.9 (label=4)
+    n_episode_5, sr_5, tr_5, rt_5 = simulation(ALGO, EPSILON_GREEDY, 0.5, 0.99, size_maze, SEED) # ε = 0.5 & ε_decay=0.99 (label=5)
+    n_episode_6, sr_6, tr_6, rt_6 = simulation(ALGO, EPSILON_GREEDY, 0.5, 0.999, size_maze, SEED) # ε = 0.5 & ε_decay=0.999 (label=6)
     
     
     # Plot results
@@ -318,15 +82,14 @@ if __name__ == "__main__":
     plt.legend()
     plt.savefig("Simulations/Influence_Epsilon/{0}/Figures/influence_of_EpsilonONtotalReward_with_ALGO_{0}_size{1}.png".format(ALGO, size_maze))
     
-    
     # ... for RESOLUTION TIME
     plt.figure(2)
-    plt.plot(range(0, n_episode_1, 10),resolution_time_1[0::10], label=label1)
-    plt.plot(range(0, n_episode_2, 10),resolution_time_2[0::10], label=label2)
-    plt.plot(range(0, n_episode_3, 10),resolution_time_3[0::10], label=label3)
-    plt.plot(range(0, n_episode_4, 10),resolution_time_4[0::10], label=label4)
-    plt.plot(range(0, n_episode_5, 10),resolution_time_5[0::10], label=label5)
-    plt.plot(range(0, n_episode_6, 10),resolution_time_6[0::10], label=label6)
+    plt.plot(range(0, n_episode_1, 10),rt_1[0::10], label=label1)
+    plt.plot(range(0, n_episode_2, 10),rt_2[0::10], label=label2)
+    plt.plot(range(0, n_episode_3, 10),rt_3[0::10], label=label3)
+    plt.plot(range(0, n_episode_4, 10),rt_4[0::10], label=label4)
+    plt.plot(range(0, n_episode_5, 10),rt_5[0::10], label=label5)
+    plt.plot(range(0, n_episode_6, 10),rt_6[0::10], label=label6)
     plt.title("Influence of epsilon on the resolution time with {} training. Size={}".format(ALGO, size_maze))
     plt.xlabel("Episodes")
     plt.ylabel("Resolution Time")
@@ -362,15 +125,15 @@ if __name__ == "__main__":
         tr6 = asarray(tr_6)
         save('Simulations/Influence_Epsilon/{0}/Arrays/TotalReward/tr6-influence_eps_{0}_size{1}_seed{2}.npy'.format(ALGO, size_maze, SEED), tr6)
         
-        resolution_time1 = asarray(resolution_time_1)
-        save('Simulations/Influence_Epsilon/{0}/Arrays/ResolutionTime/rt1-influence_eps_{0}_size{1}_seed{2}.npy'.format(ALGO, size_maze, SEED), resolution_time1)
-        resolution_time2 = asarray(resolution_time_2)
-        save('Simulations/Influence_Epsilon/{0}/Arrays/ResolutionTime/rt2-influence_eps_{0}_size{1}_seed{2}.npy'.format(ALGO, size_maze, SEED), resolution_time2)
-        resolution_time3 = asarray(resolution_time_3)
-        save('Simulations/Influence_Epsilon/{0}/Arrays/ResolutionTime/rt3-influence_eps_{0}_size{1}_seed{2}.npy'.format(ALGO, size_maze, SEED), resolution_time3)
-        resolution_time4 = asarray(resolution_time_4)
-        save('Simulations/Influence_Epsilon/{0}/Arrays/ResolutionTime/rt4-influence_eps_{0}_size{1}_seed{2}.npy'.format(ALGO, size_maze, SEED), resolution_time4)
-        resolution_time5 = asarray(resolution_time_5)
-        save('Simulations/Influence_Epsilon/{0}/Arrays/ResolutionTime/rt5-influence_eps_{0}_size{1}_seed{2}.npy'.format(ALGO, size_maze, SEED), resolution_time5)
-        resolution_time6 = asarray(resolution_time_6)
-        save('Simulations/Influence_Epsilon/{0}/Arrays/ResolutionTime/rt6-influence_eps_{0}_size{1}_seed{2}.npy'.format(ALGO, size_maze, SEED), resolution_time6)
+        rt1 = asarray(rt_1)
+        save('Simulations/Influence_Epsilon/{0}/Arrays/ResolutionTime/rt1-influence_eps_{0}_size{1}_seed{2}.npy'.format(ALGO, size_maze, SEED), rt1)
+        rt2 = asarray(rt_2)
+        save('Simulations/Influence_Epsilon/{0}/Arrays/ResolutionTime/rt2-influence_eps_{0}_size{1}_seed{2}.npy'.format(ALGO, size_maze, SEED), rt2)
+        rt3 = asarray(rt_3)
+        save('Simulations/Influence_Epsilon/{0}/Arrays/ResolutionTime/rt3-influence_eps_{0}_size{1}_seed{2}.npy'.format(ALGO, size_maze, SEED), rt3)
+        rt4 = asarray(rt_4)
+        save('Simulations/Influence_Epsilon/{0}/Arrays/ResolutionTime/rt4-influence_eps_{0}_size{1}_seed{2}.npy'.format(ALGO, size_maze, SEED), rt4)
+        rt5 = asarray(rt_5)
+        save('Simulations/Influence_Epsilon/{0}/Arrays/ResolutionTime/rt5-influence_eps_{0}_size{1}_seed{2}.npy'.format(ALGO, size_maze, SEED), rt5)
+        rt6 = asarray(rt_6)
+        save('Simulations/Influence_Epsilon/{0}/Arrays/ResolutionTime/rt6-influence_eps_{0}_size{1}_seed{2}.npy'.format(ALGO, size_maze, SEED), rt6)
