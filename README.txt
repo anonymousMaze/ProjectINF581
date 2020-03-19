@@ -11,7 +11,7 @@ Before excecuting the three .py files - compareRL_Algos.py, influence_greedy.py 
 	|
 	|___ simulation.py
 	|
-	|___ btch_simulation.py
+	|___ batch_simulation.py
 	|
 	|____/Simulations
 		  |
