@@ -137,7 +137,7 @@ def simulation(RL_ALGO=SARSA, EXPLORE_METHOD=EPSILON_GREEDY, eps_start=0.5, eps_
             action = int(action)
             obv, reward, done, info = env.step(action)
             state_prime = getTuple(obv)
-            total_reward += np.power(gamma, episode) * reward
+            total_reward += np.power(gamma, t) * reward
 
             # Select an action
             if EXPLORE_METHOD == SOFTMAX:
