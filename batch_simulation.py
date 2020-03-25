@@ -19,8 +19,8 @@ NUM_EPISODES = 1000
 STREAK_TO_END = 120 # number of "success" (i.e. how quick the maze is solved) needed to assess the good performance of a process
 
 # PARAMETERS
-size_maze = 10 # 20, 30, 50, 100, ... 
-size_batch = 5
+size_maze = 20 # 20, 30, 50, 100, ... 
+size_batch = 10
 
 
 # A[] <- A[] + a[]    with A of size NUM_EPISODES and len(a) < NUM_EPISODES
@@ -42,7 +42,7 @@ This file is used is executing simulation() function over a batch to get more re
 # CHOICE = 2 ---> TO ANALYSE THE TRADE-OFF BETWEEN EXPLORATION AND EXPLOITATION
 # CHOICE = 3 ---> TO COMPARE THE EXPLORATION METHODS : EPSILON_GREEDY VS SOFTMAX 
 
-CHOICE = 3 # 1, 2 or 3
+CHOICE = 2 # 1, 2 or 3
 
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
@@ -61,7 +61,7 @@ CHOICE = 3 # 1, 2 or 3
 
 
 
-def compare_RL_algos(EXPLORATION_METHOD = EPSILON_GREEDY, eps_start = 0.5, eps_decay = 0.9):
+def compare_RL_algos(EXPLORATION_METHOD = EPSILON_GREEDY, eps_start = 0.5, eps_decay = 0.99):
     # sr_record_S = sr_record_Q = tr_record_S = tr_record_Q = rt_record_S = rt_record_Q = np.zeros(NUM_EPISODES)
     
     sr_record_S = np.zeros(NUM_EPISODES)
@@ -164,7 +164,7 @@ label5 = "ε = 0.5 & ε_decay=0.99"
 label6 = "ε = 0.5 & ε_decay=0.999"
 
 
-def trade_off(ALGO = SARSA):
+def trade_off(ALGO = Q_LEARNING):
     """
     ---------------------------------------------------------------------------
       
